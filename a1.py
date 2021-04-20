@@ -5,7 +5,7 @@ import streamlit as st
 input_source = st.selectbox("Select Data:",options=['example01_input.csv','example02_input.csv'])
 input_treshold = st.slider("Treshold:",min_value=0,max_value = 100,value=92)
 #input_source = "example02_input.csv"
-df = pd.read_csv(f"/home/suat/Belgeler/github/unito/tasks/task01/data/{input_source}")
+df = pd.read_csv(f"data/{input_source}")
 tcols = [col for col in df if col.startswith('t')]
 tcolvals = []
 for col in tcols:
