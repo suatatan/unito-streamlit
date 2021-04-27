@@ -1,20 +1,37 @@
+# to run streamlit locally streamlit run <filename.py>
 import os
 import pandas as pd
 import streamlit as st
+#-- Configuration---
+APP_MODE = "st" # if st it is streamlit if not it works on Hydrogen kernel (hY)
+HY_TRESHOLD = 92 # Treshold for Hydrogen kernel
+if APP_MODE == "hy":
+    input_treshold = HY_TRESHOLD
+    threshold = HY_TRESHOLD
+#-- End of Configuration ---
 
-input_source = st.selectbox("Select Data:",options=['example01_input.csv','example02_input.csv'])
-input_treshold = st.slider("Treshold:",min_value=0,max_value = 100,value=92)
-#input_source = "example02_input.csv"
-df = pd.read_csv(f"data/{input_source}")
-tcols = [col for col in df if col.startswith('t')]
-tcolvals = []
-for col in tcols:
-    selected = st.checkbox(col,value=True)
-    if selected:
-        tcolvals.append(col)
+if APP_MODE == "st":
+    input_source = st.selectbox("Select Data:",options=['example01_input.csv','example02_input.csv'])
+    input_treshold = st.slider("Treshold:",min_value=0,max_value = 100,value=92)
+    df = pd.read_csv(f"data/{input_source}")
+    tcols = [col for col in df if col.startswith('t')]
+    tcolvals = []
+    for col in tcols:
+        if APP_MODE == "st":
+            selected = st.checkbox(col,value=True)
+            if selected:
+                tcolvals.append(col)
+    else:
+        pass #select all
+else:
+    df = pd.read_csv("/home/suat/Belgeler/github/unito-streamlit/data/example01_input.csv")
+    input_treshold = 92
+    tcols = [col for col in df if col.startswith('t')]
+    tcolvals = tcols
+    cols = tcolvals
 
-st.title("Input Value")
-
+if APP_MODE == "st":
+    st.title("Input Value")
 index = 0
 def preprocess(df,threshold = input_treshold, cols =  tcolvals):
     df_output = pd.DataFrame()
@@ -57,13 +74,18 @@ def preprocess(df,threshold = input_treshold, cols =  tcolvals):
 
     return df_output
 
-st.title("Results for each paper")
+if APP_MODE == "st":
+    st.title("Results for each paper")
+
 df_result = preprocess(df)
 df_result
+#df_result.to_csv("/home/suat/Belgeler/cumsums.csv")
 
 #def process_for_all_papers(df_result)
-st.title("Results for all papers:")
+if APP_MODE == "st":
+    st.title("Results for all papers:")
 
+# Calculations for ALL PAPERS---------------
 outputs = []
 # Step A: Wrangling 'reat'
 # TODO:
@@ -74,9 +96,10 @@ t_reat_dist.columns = ['topic','reat_freq','reat_perc']
 t_reat_cumsums = t_reat_perc.reat.cumsum()
 t_reat_dist['reat_cumsums'] = t_reat_cumsums
 outputs.append(t_reat_dist)
-st.write("Reat")
-st.write(t_reat_dist.astype('object'))
 
+if APP_MODE == "st":
+    st.write("Reat")
+    st.write(t_reat_dist.astype('object'))
 # Step B: Wrangling 'suffi'
 melted_topics = pd.DataFrame(",".join(df_result['suffi'].to_list()).split(","))
 melted_topics.head(3)
@@ -87,8 +110,9 @@ tdist.columns = ['topic','suffi_perc','suffi_freq']
 suffi_cumsums = tdist['suffi_perc'].cumsum()
 tdist['suffi_cumsums'] = suffi_cumsums
 outputs.append(tdist) #suffi table
-st.write("Suffi")
-st.write(tdist.astype('object'))
+if APP_MODE == "st":
+    st.write("Suffi")
+    st.write(tdist.astype('object'))
 
 # Step C:
 bins = [10,20,30,40,50,60,70,80,90,100]
@@ -97,8 +121,9 @@ tminwei_freq = pd.cut(df_result.minwei,bins = bins).value_counts(sort = False).t
 tmaxminwei_freq = tmaxwei_freq.merge(tminwei_freq)
 tmaxminwei_freq.columns = ["bin","maxwei_freq","minwei_freq"]
 outputs.append(tmaxminwei_freq)
-st.write("Max and Min Weight Freqs (tmaxminwei_freq)")
-st.write(tmaxminwei_freq.astype('object'))
+if APP_MODE == "st":
+    st.write("Max and Min Weight Freqs (tmaxminwei_freq)")
+    st.write(tmaxminwei_freq.astype('object'))
 
 # Step C-A
 tmaxwei_perc=  round(pd.cut(df_result.maxwei,bins = bins).value_counts(sort = False,normalize=True)*100,2).to_frame().fillna(0).reset_index()
@@ -110,8 +135,9 @@ t_minwei_perc_cumsums = tminwei_perc.minwei.cumsum()
 tmaxminwei_perc['maxwei_cumsums'] = t_maxwei_perc_cumsums
 tmaxminwei_perc['minwei_cumsums'] = t_minwei_perc_cumsums
 outputs.append(tmaxminwei_perc)
-st.write("Max and min weight percentages (tmaxminwei_perc)")
-st.write(tmaxminwei_perc.astype('object'))
+if APP_MODE == "st":
+    st.write("Max and min weight percentages (tmaxminwei_perc)")
+    st.write(tmaxminwei_perc.astype('object'))
 
 tmaxwei_desc = df_result.maxwei.describe().to_frame().reset_index()
 tminwei_desc = df_result.minwei.describe().to_frame().reset_index()
@@ -119,8 +145,9 @@ weidesc = tmaxwei_desc.merge(tminwei_desc)
 outputs.append(weidesc)
 
 #return outputs
-st.write("Weight Descriptipon (weidesc)")
-st.write(weidesc.astype('object'))
+if APP_MODE == "st":
+    st.write("Weight Descriptipon (weidesc)")
+    st.write(weidesc.astype('object'))
 
 
 #allpapers_results = process_for_all_papers(df_result)
