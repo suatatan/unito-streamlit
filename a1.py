@@ -105,7 +105,7 @@ melted_topics = pd.DataFrame(",".join(df_result['suffi'].to_list()).split(","))
 melted_topics.head(3)
 tfreq = melted_topics[0].value_counts().to_frame().reset_index()
 tperc = round(melted_topics[0].value_counts(normalize = True)*100,2).to_frame().fillna(0).reset_index()
-tdist = tperc.merge(tfreq,on="index")
+tdist = tperc.merge(tfreq,on = "index")
 tdist.columns = ['topic','suffi_perc','suffi_freq']
 suffi_cumsums = tdist['suffi_perc'].cumsum()
 tdist['suffi_cumsums'] = suffi_cumsums
