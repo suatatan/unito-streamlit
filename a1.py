@@ -1,9 +1,9 @@
 # to run streamlit locally streamlit run <filename.py>
-import pandas as pd
 import os
+import pandas as pd
 import streamlit as st
 #-- Configuration---
-APP_MODE = "hy" # if st it is streamlit if not it works on Hydrogen kernel (hY)
+APP_MODE = "st" # if st it is streamlit if not it works on Hydrogen kernel (hY)
 HY_TRESHOLD = 92 # Treshold for Hydrogen kernel
 if APP_MODE == "hy":
     input_treshold = HY_TRESHOLD
@@ -11,7 +11,7 @@ if APP_MODE == "hy":
 #-- End of Configuration ---
 
 if APP_MODE == "st":
-    input_source = st.selectbox("Select Data:",options=['example03_input.csv','example02_input.csv','example01_input.csv'])
+    input_source = st.selectbox("Select Data:",options=['example01_input.csv','example02_input.csv'])
     input_treshold = st.slider("Treshold:",min_value=0,max_value = 100,value=92)
     df = pd.read_csv(f"data/{input_source}")
     tcols = [col for col in df if col.startswith('t')]
@@ -33,50 +33,51 @@ else:
 if APP_MODE == "st":
     st.title("Input Value")
 index = 0
-df_output = pd.DataFrame()
-for index,row in df.iterrows():
-    rownum = index
-    #get original roww
-    orgrow = df.iloc[rownum,].to_frame().transpose()
-    sorted_tvals = df[cols].loc[rownum].sort_values(ascending=False).to_frame().reset_index().transpose()
-    sorted_tlabs = sorted_tvals.iloc[0]
-    sorted_tvals = sorted_tvals.iloc[1]
-    a = pd.concat([sorted_tlabs,sorted_tvals]).to_frame().transpose()
-    a.columns = ["sort_"+str(x+1) for x in a.columns]
-    # getting cumsum values of sorted tvals and adding to rightmost of table
-    cumsums = df[cols].loc[rownum].sort_values(ascending=False).to_frame().cumsum().reset_index().transpose()
-    cumsums_vals = cumsums.iloc[1].to_frame().transpose()
-    b = cumsums_vals
-    b.columns = ["cumsum_"+str(x+1) for x in b.columns]
-    #combining two results and juxtaposing them in the right by right in single row
-    c = pd.concat([a, b], axis=1)
-    c = pd.concat([a.reset_index(drop=True), b.reset_index(drop=True)], axis=1)
+def preprocess(df,threshold = input_treshold, cols =  tcolvals):
+    df_output = pd.DataFrame()
+    for index,row in df.iterrows():
+        rownum = index
+        #get original roww
+        orgrow = df.iloc[rownum,].to_frame().transpose()
+        sorted_tvals = df[cols].loc[rownum].sort_values(ascending=False).to_frame().reset_index().transpose()
+        sorted_tlabs = sorted_tvals.iloc[0]
+        sorted_tvals = sorted_tvals.iloc[1]
+        a = pd.concat([sorted_tlabs,sorted_tvals]).to_frame().transpose()
+        # getting cumsum values of sorted tvals and adding to rightmost of table
+        cumsums = df[cols].loc[rownum].sort_values(ascending=False).to_frame().cumsum().reset_index().transpose()
+        cumsums_vals = cumsums.iloc[1].to_frame().transpose()
+        b = cumsums_vals
+        #combining two results and juxtaposing them in the right by right in single row
+        c = pd.concat([a, b], axis=1)
+        c = pd.concat([a.reset_index(drop=True), b.reset_index(drop=True)], axis=1)
 
-    # get original serie
-    out = pd.concat([orgrow.reset_index(drop=True), c.reset_index(drop=True)], axis=1)
-    #----number of topic above threshold----
-    # we will find the number of topics above threshold (via variable b)
-    # CLEAR definition: find the minimum value within the numbers above threshold and get its label
-    # add 1 because python starts from zero
-    j = b.transpose()
-    j.columns = ["tval"]
-    k = j[j.tval > threshold]
-    kv = k[k.tval == k.tval.min()].index.values[0] if k.count()[0] > 0 else 0
-    #get only number
-    out['reat'] = kv
-    # get the labels of t's that above the threshold
-    #suffi = ",".join(sorted_tlabs[:kv])
-    #out['suffi'] = suffi
-    # max weight
-    #out['maxwei'] = max(sorted_tvals)
-    #out['minwei'] = min(sorted_tvals)
-    df_output = df_output.append(out)
-#end of for----------------------------------------------
+        # get original serie
+        out = pd.concat([orgrow.reset_index(drop=True), c.reset_index(drop=True)], axis=1)
+        #----number of topic above threshold----
+        # we will find the number of topics above threshold (via variable b)
+        # CLEAR definition: find the minimum value within the numbers above threshold and get its label
+        # add 1 because python starts from zero
+        j = b.transpose()
+        j.columns = ["tval"]
+        k = j[j.tval > threshold]
+        kv = k[k.tval == k.tval.min()].index.values[0]+1 if k.count()[0] > 0 else 0
+        out['reat'] = kv
+        # get the labels of t's that above the threshold
+        suffi = ",".join(sorted_tlabs[:kv])
+        out['suffi'] = suffi
+        # max weight
+        out['maxwei'] = max(sorted_tvals)
+        out['minwei'] = min(sorted_tvals)
+        df_output = df_output.append(out)
+    #end of for----------------------------------------------
+    #renaming columns
+
+    return df_output
 
 if APP_MODE == "st":
-    st.title("Table 1: Results for each paper")
+    st.title("Results for each paper")
 
-df_result = df_output
+df_result = preprocess(df)
 df_result
 #df_result.to_csv("/home/suat/Belgeler/cumsums.csv")
 
@@ -85,20 +86,19 @@ if APP_MODE == "st":
     st.title("Results for all papers:")
 
 # Calculations for ALL PAPERS---------------
-
+outputs = []
 # Step A: Wrangling 'reat'
 # TODO:
-
 t_reat_freq = df_result['reat'].value_counts().to_frame().fillna(0).reset_index()
 t_reat_perc = round(df_result['reat'].value_counts(normalize = True)*100,2).to_frame().reset_index()
 t_reat_dist = t_reat_freq.merge(t_reat_perc,on="index")
 t_reat_dist.columns = ['topic','reat_freq','reat_perc']
 t_reat_cumsums = t_reat_perc.reat.cumsum()
 t_reat_dist['reat_cumsums'] = t_reat_cumsums
-t_reat_dist
+outputs.append(t_reat_dist)
 
 if APP_MODE == "st":
-    st.write("Table 2: Reat")
+    st.write("Reat")
     st.write(t_reat_dist.astype('object'))
 # Step B: Wrangling 'suffi'
 melted_topics = pd.DataFrame(",".join(df_result['suffi'].to_list()).split(","))
