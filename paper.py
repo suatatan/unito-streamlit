@@ -24,17 +24,21 @@ def cumsums_paper_topics(df,rownum = 0):
     sorted['cumsum'] = cumsums_vals.transpose()
     return sorted
 
-def topics_that_are_sufficient_to_reach_the_threshold(df,rownum = 0,treshold = 90):
+def topics_that_are_sufficient_to_reach_the_threshold(df,rownum = 0,treshold = 92):
     #for any paper
     cumsums = cumsums_paper_topics(df,rownum)
-    as_df = cumsums[cumsums['cumsum'] >= treshold] #equal or bigger
-    # sign with bigger than Treshold
-    cumsums['is_equal_or_bigger_than_treshold'] = cumsums['cumsum'] >= treshold
+    as_df = cumsums[cumsums['cumsum'] >= treshold]
+    #all rows under treshold
+    as_df_under_treshold = cumsums[cumsums['cumsum'] <= treshold]
+    #first row upper treshold (as slice)
+    as_df_first_bigger_than_treshold = cumsums[cumsums['cumsum'] > treshold].iloc[0].to_frame().transpose()
+    #merge
+    as_df = as_df_under_treshold.append(as_df_first_bigger_than_treshold)
     as_count = as_df.count()[0]
     as_topic_labels = ",".join(as_df['topic'])
     
     return {
-        "as_df": cumsums,
+        "as_df": as_df,
         "as_count": as_count,
         "as_topic_labels" : as_topic_labels
     }
