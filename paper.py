@@ -1,12 +1,18 @@
 import pandas as pd
+import re
+#df = pd.read_csv("~/Belgeler/github/unito-streamlit/data/t25_completolda_documenti.csv")
 
 def vsum(a,b):
     return a+b
 
+def extract_topic_columns(df):
+    topics_dirty = [re.findall(r"^t\d+",topic) for topic in df.columns]
+    topics = [x[0] for x in topics_dirty if len(x) > 0]
+    return topics
+
 def sort_paper_topics(df,rownum):
     #for any paper
-    cols = ['t1','t2','t3','t4','t5','t6','t7','t8','t9','t10','t11','t12','t13','t14','t15',
-            't16','t17','t18','t19','t20','t21','t22','t23','t24','t25']
+    cols = extract_topic_columns(df)
     sorted_tvals = df[cols].loc[rownum].sort_values(ascending=False).to_frame().reset_index().transpose()
     sorted_tlabs = sorted_tvals.iloc[0]
     sorted_tvals = sorted_tvals.iloc[1]

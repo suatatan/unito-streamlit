@@ -6,8 +6,7 @@ import streamlit as st
 notta = 'number of topics that are sufficient to reach the threshold'
 lotta = 'label of topics that are sufficient to reach the threshold'
 
-
-@st.cache
+#@st.cache
 def table1(df,TRESHOLD = 0.80):
     for index,row in df.iterrows():
         reat = pa.topics_that_are_sufficient_to_reach_the_threshold(df,rownum = index,treshold=TRESHOLD)
@@ -21,6 +20,7 @@ def table1(df,TRESHOLD = 0.80):
 def summary_table1(table1):
     return table1[notta].describe().to_frame().transpose()
 
+#@st.cache
 def table2(table_1):
     t_reat_freq = table_1[notta].value_counts().to_frame().fillna(0).reset_index()
     t_reat_perc = round(table_1[notta].value_counts(normalize = True)*100,2).to_frame().reset_index()
@@ -28,7 +28,7 @@ def table2(table_1):
     t_reat_dist.columns = ['topic','reat_freq','reat_perc']
     t_reat_dist['cms'] = t_reat_dist.reat_perc.cumsum()
     t_reat_dist.columns = [notta,'number of paper','percentage','cumulative percentage']
-    t_reat_dist.sort_values(by = notta)
+    t_reat_dist = t_reat_dist.sort_values(by = notta, ascending=True)
     bottom = t_reat_dist.sum().to_frame().transpose()
     bottom[notta] = "Total"
     bottom['cumulative percentage'] = ""
@@ -39,6 +39,7 @@ def table2(table_1):
 def get_order(topicno):
     return topicno.split("t")[1]
 
+#@st.cache
 def table3(table_1):
     melted_topics = pd.DataFrame(",".join(table_1[lotta].to_list()).split(","))
     tfreq = melted_topics[0].value_counts().to_frame().reset_index()
@@ -51,6 +52,7 @@ def table3(table_1):
     tfreq = tfreq[['topic','number of paper','percentage of papers in the corpus']]
     return tfreq
 
+#@st.cache
 def table4(table_1):
     bins = [0,0.1,0.2,0.3,0.4,0.5,0.6,0.7,0.8,0.9,1]
     tmaxwei_freq = pd.cut(table_1['max weight'],bins = bins).value_counts(sort = False).to_frame().fillna(0).reset_index()
@@ -70,4 +72,28 @@ def table4(table_1):
     #tmaxminwei_freq.append(tmaxminwei_freq.sum(numeric_only=True), ignore_index=True) # summary table
 
     tmaxminwei_freq.loc["Row_Total"] = tmaxminwei_freq.sum()
+    return tmaxminwei_freq
+
+#@st.cache
+def table4_1(table_1,USER_INPUT_T=1):
+    bins = [0,0.1,0.2,0.3,0.4,0.5,0.6,0.7,0.8,0.9,1]
+    subset_table = table_1[table_1['number of topics that are sufficient to reach the threshold'] == int(USER_INPUT_T)]
+    tmaxwei_freq = pd.cut(subset_table['max weight'],bins = bins).value_counts(sort = False).to_frame().fillna(0).reset_index()
+    tminwei_freq = pd.cut(subset_table['min weight'],bins = bins).value_counts(sort = False).to_frame().fillna(0).reset_index()
+    tmaxminwei_freq = tmaxwei_freq.merge(tminwei_freq)
+    tmaxminwei_freq.columns = ["bin","pa_max","pa_min"]
+    pa_max_sum = tmaxminwei_freq.pa_max.sum()
+    pa_min_sum = tmaxminwei_freq.pa_min.sum()
+    #tmaxminwei_freq.append(tmaxminwei_freq.sum(numeric_only=True), ignore_index=True)
+
+    tmaxminwei_freq['perc_max'] = tmaxminwei_freq.pa_max / pa_max_sum
+    tmaxminwei_freq['perc_min'] = tmaxminwei_freq.pa_min / pa_min_sum
+
+    tmaxminwei_freq['cumsum_max'] = tmaxminwei_freq.perc_max.cumsum()
+    tmaxminwei_freq['cumsum_min'] = tmaxminwei_freq.perc_min.cumsum()
+    tmaxminwei_freq = tmaxminwei_freq[['bin','pa_max','perc_max','cumsum_max','pa_min','perc_min','cumsum_min']]
+    #tmaxminwei_freq.append(tmaxminwei_freq.sum(numeric_only=True), ignore_index=True) # summary table
+
+    tmaxminwei_freq.loc["Row_Total"] = tmaxminwei_freq.sum()
+    tmaxminwei_freq
     return tmaxminwei_freq
