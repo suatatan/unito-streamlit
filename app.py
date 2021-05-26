@@ -4,6 +4,7 @@
 # Depencencies: paper.py dataprocess.py
 # PART 1:  Input data
 #--------------------------------------
+# <editor-fold>
 import os
 import pandas as pd
 import streamlit as st
@@ -21,8 +22,10 @@ df = pd.read_csv(f"data/{input_source}")
 # Show  input data
 st.markdown("Input Table: IN1")
 df
+# </editor-fold>
 # PART 2:  Output tables
 #--------------------------------------
+# <editor-fold>
 # Table1
 # Show table 1 over dp
 st.markdown("Output")
@@ -37,3 +40,4 @@ table1
 # Table4
 
 # Table5
+# </editor-fold>
