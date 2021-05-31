@@ -18,7 +18,7 @@ st.markdown("## Input ")
 st.markdown("Please select the input data set")
 input_source = st.selectbox("Select Data:",options=['example04_input.csv','t10_completolda_documenti.csv','t25_completolda_documenti.csv'])
 st.markdown("Please select the treshold")
-input_treshold = st.slider("Treshold:",min_value = 0.0, max_value = 1.0,value = 0.8, step=0.1,
+input_treshold = st.slider("Treshold:",min_value = 0.10, max_value = 0.95 ,value = 0.8, step=0.05,
         help="Please be patient when you change tresold")
 df = pd.read_csv(f"data/{input_source}")
 #df = pd.read_csv("~/Belgeler/github/unito-streamlit/data/t25_completolda_documenti.csv")
@@ -34,7 +34,7 @@ df
 # Show table 1 over dp
 
 st.markdown("Output")
-st.markdown(f"## Table 1: Threshold analysis (Threshold {input_treshold})")
+st.markdown(f"## Table 1: (Threshold {input_treshold})")
 #numeric_df = df.drop(columns=['volume','issue','autori','year','title','chiave'])
 table1 = dp.table1(df,TRESHOLD = input_treshold)
 table1
